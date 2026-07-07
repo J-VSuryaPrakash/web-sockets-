@@ -1,0 +1,62 @@
+A normal HTTP connection is a stateless connection.
+Whereas a websocket connection is stateful connection.
+Here memory is consumed in server - and there is also something called as file descriptor
+
+So inorder to maintain the connection memory is consumed to maintain the connection.
+
+Although howmuch ever memory we have, let say 1TB of RAM but still it is limited.
+
+So now when this memory is limited then how do we handle users at scale
+
+Now we can just scale our server:
+Let say, 4GB ram is able to handle - 1000 users
+When my server is about to hit 1000 users we scale the server from 4GB to 8GB ram
+And now it can handle around 2000 users. When the server is about to hit 2000 users 
+again we scale it. This is vertical scaling.
+
+But vertical scaling has a drawback
+When we have to first we need to shutdown our server and increase the resources
+and then we have to restart it with the new specs
+
+So it is not possible to scale a running server - bad user experience.
+
+Now we have to scale it horizontally using redis. Will continue...
+
+---- Linux -----
+
+In linux everything is a file.
+What socket we create can be said as a network socket and this can also be a file 
+When we make a connection then a files is created  called as file descriptor. It just contains a flag as a number 
+saying that we have opened a resource
+
+Now lets say i have opened 1024 default number of connections
+Now we cannot create more connections. 
+
+Understand how socket in websocket is different from the usual web server connection over a socket
+
+10kb is for idle connection, not included framework (socket.io), and buffer - why buffer since we can send any kind of media like video, audio
+
+For bare minimum for only socket exclusivley for about 100k connections we need about 4 GB of RAM  ( in idle state )
+
+In any machine when we try to deploy a websocket server there is a need to configure the number of connections we make
+
+There is a 3 layer way to configure
+
+Global kernel - how many files linux will allow to create we need to specify : file-max
+
+How many process can you run on linux ?
+1024 (default)
+ulimit - need to handle when handling in production
+
+Need to look for port range as well 
+
+how connection is made: unique IP + port
+
+Hence connections are limited 
+
+Phoenix is a framework which allows to create multiple connections at scale
+
+Checkbox - project
+Write a article on linux FS
+
+
