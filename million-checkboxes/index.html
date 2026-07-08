@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Million Checkboxes</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        box-sizing: content-box;
+        background-color: #101010;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: solid 0.2px #f0f8ff;
+        margin: 20px;
+        border-radius: 12px;
+        height: 100vh;
+      }
+
+      .head {
+        color: #f0f8ff;
+        font-family:
+          "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
+          "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+        /* border: solid 0.2px #a9fba0; */
+        margin: 12px;
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="head">
+        <h1>Million Checkboxes</h1>
+      </div>
+      <div class="boxes" id="boxes"></div>
+    </div>
+    <script>
+      const ws = new WebSocket("ws://localhost:9000");
+        
+      ws.onmessage = (event) => {
+        console.log(`The message from server ${event.data}`);
+    };
+
+      const boxes = document.getElementById("boxes");
+
+      window.onload = () => {
+        for (let i = 0; i < 10; i++) {
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.id = i;
+          if (map.has(i)) {
+            input.checked = true;
+          } else {
+            input.checked;
+          }
+          input.onchange = (event) => {
+            
+            if (input.checked) {
+              ws.send(JOSN.stringify({ 'id': event.target.id, 'state': true }));
+            } else {
+                ws.send(JOSN.stringify({ 'id': event.target.id, 'state': false }));
+            }
+          };
+          boxes.appendChild(input);
+        }
+      };
+    </script>
+  </body>
+</html>
