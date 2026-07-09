@@ -14,14 +14,37 @@ const httpServer = new http.createServer(async (req, res) => {
 
 const wsServer = new WebSocketServer({ server: httpServer });
 
-wsServer.on('connection', (websocket) => {
-    console.log('Connection established');
-    websocket.on('message', (data) => {
-        console.log(`The message from client ${data}`)
-        websocket.send(map)
-    })
-})
+wsServer.on("connection", (websocket) => {
+  console.log("Connection established");
+  websocket.on("message", (data) => {
+    const eventData = JSON.parse(data);
+    if (eventData.type === "init") {
+      let list = [];
+      for (let key of map.keys()) {
+        list.push(parseInt(key));
+      }
+      websocket.send(JSON.stringify(list));
+    }
+    if (eventData.type === "state") {
+      wsServer.clients.forEach((websocket) => {
+        const id = eventData.id;
+        const state = eventData.state;
 
+        if (state) {
+          map.set(id, true);
+          websocket.send(
+            JSON.stringify({ type: "state", id: id, state: state }),
+          );
+        } else {
+          map.delete(id);
+          websocket.send(
+            JSON.stringify({ type: "state", id: id, state: state }),
+          );
+        }
+      });
+    }
+  });
+});
 
 httpServer.listen(PORT, () => {
   console.log(`Server is listening on http://localhost:${PORT}`);

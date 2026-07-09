@@ -42,34 +42,39 @@
     </div>
     <script>
       const ws = new WebSocket("ws://localhost:9000");
-        
-      ws.onmessage = (event) => {
-        console.log(`The message from server ${event.data}`);
-    };
-
       const boxes = document.getElementById("boxes");
 
-      window.onload = () => {
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: "init" }));
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.id === undefined) render(data);
+        if (data.type === "state") {
+          const checkbox = document.getElementById(data.id);
+          if (checkbox) {
+            checkbox.checked = data.state;
+          }
+        }
+      };
+
+      function render(list) {
         for (let i = 0; i < 10; i++) {
           const input = document.createElement("input");
-          input.type = "checkbox";
           input.id = i;
-          if (map.has(i)) {
+          input.type = "checkbox";
+          if (list.findIndex((item) => item === i) !== -1) {
             input.checked = true;
           } else {
-            input.checked;
+            input.checked = false;
           }
-          input.onchange = (event) => {
-            
-            if (input.checked) {
-              ws.send(JOSN.stringify({ 'id': event.target.id, 'state': true }));
-            } else {
-                ws.send(JOSN.stringify({ 'id': event.target.id, 'state': false }));
-            }
+          input.onchange = () => {
+            ws.send(JSON.stringify({type: 'state', id: input.id, state: input.checked}));
           };
           boxes.appendChild(input);
         }
-      };
+      }
     </script>
   </body>
 </html>
