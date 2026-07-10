@@ -60,3 +60,7 @@ Checkbox - project
 Write a article on linux FS
 
 
+
+Notes of One million:
+
+Lets say my machine is running on port 8000 and when a external request comes from the client for the files that are private like db.js, server.js etc.,, which is not good. And by default express does not send any file in response for a request. 
