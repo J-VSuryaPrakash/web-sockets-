@@ -28,8 +28,16 @@
         font-family:
           Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         background:
-          radial-gradient(circle at top left, rgba(125, 211, 252, 0.18), transparent 34%),
-          radial-gradient(circle at 85% 15%, rgba(167, 139, 250, 0.16), transparent 28%),
+          radial-gradient(
+            circle at top left,
+            rgba(125, 211, 252, 0.18),
+            transparent 34%
+          ),
+          radial-gradient(
+            circle at 85% 15%,
+            rgba(167, 139, 250, 0.16),
+            transparent 28%
+          ),
           linear-gradient(160deg, var(--bg), var(--bg-2) 62%, #04080d 100%);
         color: var(--text);
       }
@@ -43,7 +51,11 @@
           linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
           linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
         background-size: 42px 42px;
-        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.85), transparent 92%);
+        mask-image: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.85),
+          transparent 92%
+        );
       }
 
       .container {
@@ -58,7 +70,11 @@
         padding: 28px 22px 34px;
         border: 1px solid var(--panel-border);
         border-radius: 24px;
-        background: linear-gradient(180deg, rgba(12, 22, 33, 0.9), rgba(8, 15, 24, 0.74));
+        background: linear-gradient(
+          180deg,
+          rgba(12, 22, 33, 0.9),
+          rgba(8, 15, 24, 0.74)
+        );
         box-shadow: var(--shadow);
         backdrop-filter: blur(18px);
         overflow: hidden;
@@ -76,7 +92,12 @@
         line-height: 1;
         letter-spacing: -0.06em;
         font-weight: 800;
-        background: linear-gradient(135deg, #ffffff 0%, var(--accent) 55%, var(--accent-2) 100%);
+        background: linear-gradient(
+          135deg,
+          #ffffff 0%,
+          var(--accent) 55%,
+          var(--accent-2) 100%
+        );
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
@@ -111,7 +132,11 @@
         margin: 0;
         border-radius: 7px;
         border: 1.5px solid rgba(173, 196, 224, 0.5);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.06),
+          rgba(255, 255, 255, 0.02)
+        );
         box-shadow:
           inset 0 1px 0 rgba(255, 255, 255, 0.08),
           0 6px 16px rgba(0, 0, 0, 0.2);
@@ -138,7 +163,11 @@
       .boxes input[type="checkbox"]:checked {
         border-color: rgba(125, 211, 252, 0.95);
         background:
-          radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.75), transparent 34%),
+          radial-gradient(
+            circle at 30% 30%,
+            rgba(255, 255, 255, 0.75),
+            transparent 34%
+          ),
           linear-gradient(135deg, var(--accent), var(--accent-2));
         box-shadow:
           0 0 0 1px rgba(125, 211, 252, 0.22),
@@ -188,41 +217,40 @@
       </div>
       <div class="boxes" id="boxes"></div>
     </div>
+    <script src="/socket.io/socket.io.js"></script>
     <script>
-      const ws = new WebSocket("ws://localhost:9000");
-      const boxes = document.getElementById("boxes");
+      const socket = io();
+      const CHECK_BOXES = 100;
+      const boxContainer = document.getElementById("boxes");
 
-      ws.onopen = () => {
-        ws.send(JSON.stringify({ type: "init" }));
-      };
-
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.id === undefined) render(data);
-        if (data.type === "state") {
-          const checkbox = document.getElementById(data.id);
-          if (checkbox) {
-            checkbox.checked = data.state;
-          }
+      window.addEventListener("load", async () => {
+        const response = await fetch('/checkboxes', { method: 'GET' });
+        const data = await response.json();
+        
+        if (data && data.checkbox) {
+          data.checkbox.forEach((value, index) => {
+            const input = document.createElement("input");
+            input.id = index;
+            input.type = 'checkbox';
+            input.checked = value;
+            input.addEventListener("change", (e) => {
+              socket.emit("client:checkbox", {
+                id: e.target.id,
+                checked: e.target.checked,
+              });
+            });
+            boxContainer.appendChild(input);
+          });
         }
-      };
+      });
 
-      function render(list) {
-        for (let i = 0; i < 1000; i++) {
-          const input = document.createElement("input");
-          input.id = i;
-          input.type = "checkbox";
-          if (list.findIndex((item) => item === i) !== -1) {
-            input.checked = true;
-          } else {
-            input.checked = false;
-          }
-          input.onchange = () => {
-            ws.send(JSON.stringify({type: 'state', id: input.id, state: input.checked}));
-          };
-          boxes.appendChild(input);
+      socket.on("server:checkbox", (data) => {
+        const { id, checked } = data;
+        const input = document.getElementById(id);
+        if (input) {
+          input.checked = checked;
         }
-      }
+      });
     </script>
   </body>
 </html>

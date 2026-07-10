@@ -1,51 +1,48 @@
-import http from "http";
-import path from "path";
-import fs from "node:fs/promises";
-import { WebSocketServer } from "ws";
+import http from 'node:http';
+import path from 'node:path';
 
-const PORT = process.env.PORT ?? 9000;
-const map = new Map();
+import express from 'express';
+import { Server } from 'socket.io';
 
-const httpServer = new http.createServer(async (req, res) => {
-  const indexFile = await fs.readFile(path.resolve("./index.html"), "utf-8");
-  res.setHeader("Content-Type", "text/html");
-  return res.end(indexFile);
-});
+const CHECK_BOX = 100;
+const store = {
+  checkbox : new Array(CHECK_BOX).fill(false)
+}
 
-const wsServer = new WebSocketServer({ server: httpServer });
+async function main(){
 
-wsServer.on("connection", (websocket) => {
-  console.log("Connection established");
-  websocket.on("message", (data) => {
-    const eventData = JSON.parse(data);
-    if (eventData.type === "init") {
-      let list = [];
-      for (let key of map.keys()) {
-        list.push(parseInt(key));
-      }
-      websocket.send(JSON.stringify(list));
-    }
-    if (eventData.type === "state") {
-      wsServer.clients.forEach((websocket) => {
-        const id = eventData.id;
-        const state = eventData.state;
+  const PORT = process.env.PORT ?? 8000;
+  const app = new express();
 
-        if (state) {
-          map.set(id, true);
-          websocket.send(
-            JSON.stringify({ type: "state", id: id, state: state }),
-          );
-        } else {
-          map.delete(id);
-          websocket.send(
-            JSON.stringify({ type: "state", id: id, state: state }),
-          );
-        }
-      });
-    }
-  });
-});
+  const httpServer = http.createServer(app);
+  const io = new Server();
+  
+  io.attach(httpServer)
+  
+  app.use(express.static(path.resolve('./public')))
+  app.get('/health', (req, res) => {
+    res.send({'type': 'health-check'});
+  })
+  app.get('/checkboxes', (req, res) => {
+    return res.json({checkbox: store.checkbox});
+  })
 
-httpServer.listen(PORT, () => {
-  console.log(`Server is listening on http://localhost:${PORT}`);
-});
+
+  io.on('connection', (socket) => {
+    console.log(`Socket ${socket.id} connected`);
+
+    socket.on('client:checkbox', (data) => {
+      const {id, checked} = data;
+      store.checkbox[id] = checked;
+      io.emit('server:checkbox', data);
+    })
+
+  })
+
+  httpServer.listen(PORT, () => {
+    console.log(`Server is running http://localhost:${PORT}`)
+  })
+
+}
+
+main();
