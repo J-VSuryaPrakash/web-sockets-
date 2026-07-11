@@ -186,6 +186,47 @@
         transform: rotate(-45deg);
       }
 
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 24px;
+        z-index: 20;
+        min-width: min(92vw, 360px);
+        max-width: min(92vw, 420px);
+        padding: 14px 16px;
+        border: 1px solid rgba(251, 113, 133, 0.35);
+        border-radius: 14px;
+        background: rgba(27, 12, 18, 0.96);
+        color: #ffe4e6;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+        transform: translate(-50%, 12px);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 180ms ease,
+          transform 180ms ease;
+      }
+
+      .toast.is-visible {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+
+      .toast__title {
+        display: block;
+        margin: 0 0 4px;
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #fecdd3;
+      }
+
+      .toast__message {
+        margin: 0;
+        font-size: 0.92rem;
+        line-height: 1.4;
+        color: #fff1f2;
+      }
+
       @media (max-width: 640px) {
         body {
           padding: 14px;
@@ -217,16 +258,38 @@
       </div>
       <div class="boxes" id="boxes"></div>
     </div>
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true">
+      <strong class="toast__title">Update blocked</strong>
+      <p class="toast__message" id="toast-message"></p>
+    </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
       const socket = io();
       const CHECK_BOXES = 100;
       const boxContainer = document.getElementById("boxes");
+      const toast = document.getElementById("toast");
+      const toastMessage = document.getElementById("toast-message");
+      let toastTimer;
 
-      window.addEventListener("load", async () => {
+      function showToast(message) {
+        toastMessage.textContent = message;
+        toast.classList.add("is-visible");
+
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => {
+          toast.classList.remove("is-visible");
+        }, 2500);
+      }
+
+      async function renderContainer(){
+
+        while(boxContainer.firstChild){
+          boxContainer.removeChild(boxContainer.firstChild);
+        }
+
         const response = await fetch('/checkboxes', { method: 'GET' });
         const data = await response.json();
-        
+
         if (data && data.checkbox) {
           data.checkbox.forEach((value, index) => {
             const input = document.createElement("input");
@@ -238,10 +301,21 @@
                 id: e.target.id,
                 checked: e.target.checked,
               });
+              renderContainer();
             });
             boxContainer.appendChild(input);
           });
         }
+
+      }
+
+      window.addEventListener("load", async () => {
+        renderContainer();
+      });
+
+      socket.on('server:rate-limit', (data) => {
+        const errorMessage = data.message;
+        showToast(errorMessage);
       });
 
       socket.on("server:checkbox", (data) => {
